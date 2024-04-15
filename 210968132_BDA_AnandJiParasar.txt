@@ -1,0 +1,1608 @@
+
+Anand Ji Parasar
+210968132
+BDA LAB 
+Week 4 to Week 10 
+
+
+
+Week 4
+Question 1
+
+hi how are you
+i am good
+hope you doing good too
+how about you.
+i am in manipal
+studying Btech in Data science.
+
+record = LOAD '/bda1/input.txt/';
+STORE record INTO '/bda1/out';
+
+pig -x mapreduce pigscript.pig
+
+
+
+
+Question 2
+hello world
+hello pig
+world pig
+hello world
+hello pig
+world pig
+hello world
+hello pig
+world pig
+hello world
+hello pig
+world pig
+
+-- Load data
+data = LOAD '/bda1/input_word_count.txt' AS (line:CHARARRAY);
+
+-- Tokenize words
+words = FOREACH data GENERATE FLATTEN(TOKENIZE(line)) AS word;
+
+-- Group by word and count occurrences
+word_count = GROUP words BY word;
+word_count_result = FOREACH word_count GENERATE group AS word, COUNT(words) AS count;
+
+-- Store result
+STORE word_count_result INTO '/bda1/word_count_out';
+
+pig -x mapreduce word_count.pig
+
+
+Question 3
+wget https://raw.githubusercontent.com/ashaypatil11/hadoop/main/movies.item
+wget https://raw.githubusercontent.com/ashaypatil11/hadoop/main/ratings.data
+
+hdfs dfs -put movies.item bda1/
+hdfs dfs -put ratings.data bda1/
+
+-- Load ratings data
+ratings = LOAD 'ratings.data' USING PigStorage('\t') AS (userID:INT, movieID:INT, rating:DOUBLE, timestamp:INT);
+
+-- Group ratings by movieID and calculate average rating
+avg_ratings = GROUP ratings BY movieID;
+avg_rating_result = FOREACH avg_ratings GENERATE group AS movieID, AVG(ratings.rating) AS avg_rating;
+
+-- Load movie data
+movies = LOAD 'movies.item' USING PigStorage('|') AS (movieID:INT, title:CHARARRAY, release_date:CHARARRAY, video_release_date:CHARARRAY, IMDb_URL:CHARARRAY, unknown:INT, Action:INT, Adventure:INT, Animation:INT, Childrens:INT, Comedy:INT, Crime:INT, Documentary:INT, Drama:INT, Fantasy:INT, Film_Noir:INT, Horror:INT, Musical:INT, Mystery:INT, Romance:INT, Sci_Fi:INT, Thriller:INT, War:INT, Western:INT);
+
+-- Join average ratings with movie data
+joined_data = JOIN avg_rating_result BY movieID, movies BY movieID;
+
+-- Order by average rating in descending order
+ordered_data = ORDER joined_data BY avg_rating_result::avg_rating DESC;
+
+-- Get the most popular movie
+most_popular_movie = LIMIT ordered_data 1;
+
+-- Display the result
+DUMP most_popular_movie;
+
+pig -x mapreduce most_popular_movie.pig
+
+
+
+Week 5
+Question 1
+// Create an RDD from the dataset
+val data = sc.parallelize(Seq("Hello world", "Hello Spark", "Apache Spark is awesome"))
+
+// Split each line into words and flatten the resulting list of words
+val words = data.flatMap(_.split(" "))
+
+// Map each word to a tuple of (word, 1) for counting
+val wordCounts = words.map(word => (word, 1))
+
+// Reduce by key to count occurrences of each word
+val wordCount = wordCounts.reduceByKey(_ + _)
+
+// Print the word count
+wordCount.collect().foreach(println)
+
+(Hello,2)
+(world,1)
+(awesome,1)
+(is,1)
+(Spark,2)
+(Apache,1)
+
+
+Question 2
+// Load the data into an RDD
+val employeeRecords = sc.parallelize(Seq(
+  "24 John 26 30000",
+  "34 Jack 40 80000",
+  "61 Joshi 25 35000",
+  "45 Jash 35 75000",
+  "34 Yash 40 60000",
+  "67 Smith 20 24000",
+  "42 Lion 42 56000",
+  "62 Kate 50 76000",
+  "21 Cassy 51 40000",
+  "10 Ronald 57 65000",
+  "24 John 26 30000",
+  "67 Smith 20 24000",
+  "45 Jash 35 75000",
+  "21 Cassy 51 40000"
+))
+
+// Split each line by space and convert it into (regNo, empName, age, salary) tuple
+val parsedRecords = employeeRecords.map(line => {
+  val parts = line.split(" ")
+  (parts(0), parts(1), parts(2).toInt, parts(3).toInt)
+})
+
+// Transform each record using map transformation to (name, age * 2, salary)
+val transformedRecords = parsedRecords.map(record => (record._1, record._2, record._3 * 2, record._4))
+
+// Show the transformed records
+transformedRecords.collect().foreach(println)
+
+
+(24,John,52,30000)
+(34,Jack,80,80000)
+(61,Joshi,50,35000)
+(45,Jash,70,75000)
+(34,Yash,80,60000)
+(67,Smith,40,24000)
+(42,Lion,84,56000)
+(62,Kate,100,76000)
+(21,Cassy,102,40000)
+(10,Ronald,114,65000)
+(24,John,52,30000)
+(67,Smith,40,24000)
+(45,Jash,70,75000)
+(21,Cassy,102,40000)
+
+
+Question 3
+// Load the data into an RDD
+val employeeRecords = sc.parallelize(Seq(
+  "24 John 26 30000",
+  "34 Jack 40 80000",
+  "61 Joshi 25 35000",
+  "45 Jash 35 75000",
+  "34 Yash 40 60000",
+  "67 Smith 20 24000",
+  "42 Lion 42 56000",
+  "62 Kate 50 76000",
+  "21 Cassy 51 40000",
+  "10 Ronald 57 65000",
+  "24 John 26 30000",
+  "67 Smith 20 24000",
+  "45 Jash 35 75000",
+  "21 Cassy 51 40000"
+))
+
+// Split each line by space and convert it into (regNo, empName, age, salary) tuple
+val parsedRecords = employeeRecords.map(line => {
+  val parts = line.split(" ")
+  (parts(0), parts(1), parts(2).toInt, parts(3).toInt)
+})
+
+// Filter out employees whose salary is greater than 50000
+val filteredRecords = parsedRecords.filter(record => record._4 > 50000)
+
+// Show the filtered records
+filteredRecords.collect().foreach(println)
+
+(34,Jack,40,80000)
+(45,Jash,35,75000)
+(34,Yash,40,60000)
+(42,Lion,42,56000)
+(62,Kate,50,76000)
+(10,Ronald,57,65000)
+(45,Jash,35,75000)
+
+
+Question 4
+Spark is a powerful distributed computing framework.
+It provides high-level APIs in Java, Scala, Python, and R.
+Spark offers support for various data processing tasks such as batch processing, real-time processing, machine learning, and graph processing.
+
+
+// Read the text file into an RDD
+val sentences = sc.textFile("./q4_input.txt")
+
+// Split each sentence into words using flatMap transformation
+val words = sentences.flatMap(sentence => sentence.split(" "))
+
+// Show the resulting words
+words.collect().foreach(println)
+
+Spark
+is
+a
+powerful
+distributed
+computing
+framework.
+It
+provides
+high-level
+APIs
+in
+Java,
+Scala,
+Python,
+and
+R.
+Spark
+offers
+support
+for
+various
+data
+processing
+tasks
+such
+as
+batch
+processing,
+real-time
+processing,
+machine
+learning,
+and
+graph
+processing.
+
+
+Question 5
+
+// Create a dataset of student details
+val studentDetails = sc.parallelize(Seq(
+  ("Alice", "Math", 85),
+  ("Bob", "Physics", 75),
+  ("Charlie", "Math", 90),
+  ("David", "Chemistry", 80),
+  ("Eve", "Physics", 70),
+  ("Frank", "Math", 88),
+  ("Grace", "Chemistry", 82),
+  ("Harry", "Physics", 72)
+))
+
+// Group students by subject using groupBy transformation
+val groupedBySubject = studentDetails.groupBy(_._2)
+
+// Show the resulting groups
+groupedBySubject.collect().foreach{ case (subject, students) =>
+  println(s"Students in $subject:")
+  students.foreach(student => println(s"  ${student._1}, Score: ${student._3}"))
+  println()
+}
+
+
+Students in Chemistry:
+  David, Score: 80
+  Grace, Score: 82
+
+Students in Physics:
+  Bob, Score: 75
+  Eve, Score: 70
+  Harry, Score: 72
+
+Students in Math:
+  Alice, Score: 85
+  Charlie, Score: 90
+  Frank, Score: 88
+  
+  
+Question 6
+// Load the employee dataset into an RDD
+val employeeRecords = sc.parallelize(Seq(
+  ("24", "John", 26, 30000),
+  ("34", "Jack", 40, 80000),
+  ("61", "Joshi", 25, 35000),
+  ("45", "Jash", 35, 75000),
+  ("34", "Yash", 40, 60000),
+  ("67", "Smith", 20, 24000),
+  ("42", "Lion", 42, 56000),
+  ("62", "Kate", 50, 76000),
+  ("21", "Cassy", 51, 40000),
+  ("10", "Ronald", 57, 65000),
+  ("24", "John", 26, 30000),
+  ("67", "Smith", 20, 24000),
+  ("45", "Jash", 35, 75000),
+  ("21", "Cassy", 51, 40000)
+))
+
+// Collect the first 5 records as an array
+val firstFiveRecords = employeeRecords.take(5)
+
+// Print the first 5 records
+firstFiveRecords.foreach(println)
+
+(24,John,26,30000)                                                              
+(34,Jack,40,80000)
+(61,Joshi,25,35000)
+(45,Jash,35,75000)
+(34,Yash,40,60000)
+
+
+Question 7
+// Start Spark Shell by running spark-shell command in terminal
+
+// Create an RDD using Parallelized Collection
+val data = Array(1, 2, 3, 4, 5)
+val rdd1 = sc.parallelize(data)
+
+// Find the sum of all elements in RDD1
+val sum_rdd1 = rdd1.sum()
+println("Sum of elements in RDD1: " + sum_rdd1)
+
+// Create an RDD from Existing RDD by squaring each element
+val rdd2 = rdd1.map(x => x * x)
+
+// Find the sum of all elements in RDD2
+val sum_rdd2 = rdd2.sum()
+println("Sum of squared elements in RDD2: " + sum_rdd2)
+
+// Create an RDD from External Sources (e.g., text file)
+val rdd_external = sc.textFile("./q4_input.txt")
+
+// Perform operations on the RDD as needed
+// For example, you can count the number of lines in the file
+val num_lines = rdd_external.count()
+println("Number of lines in the external text file: " + num_lines)
+
+
+Sum of elements in RDD1: 15.0                                                   
+Sum of squared elements in RDD2: 55.0
+Number of lines in the external text file: 3
+
+
+Question 8
+// Start Spark Shell by running spark-shell command in terminal
+
+// Load the dataset into an RDD
+val data = sc.parallelize(Seq(
+    (24, "John", 26, 30000),
+    (34, "Jack", 40, 80000),
+    (61, "Joshi", 25, 35000),
+    (45, "Jash", 35, 75000),
+    (34, "Yash", 40, 60000),
+    (67, "Smith", 20, 24000),
+    (42, "Lion", 42, 56000),
+    (62, "kate", 50, 76000),
+    (21, "cassy", 51, 40000),
+    (10, "ronald", 57, 65000),
+    (24, "John", 26, 30000),
+    (67, "Smith", 20, 24000),
+    (45, "Jash", 35, 75000),
+    (21, "cassy", 51, 40000)
+))
+
+// Sort the RDD by the first element (Reg.No)
+val sortedRDD = data.sortBy(_._1)
+
+// Display the sorted RDD
+println("Sorted RDD:")
+sortedRDD.collect().foreach(println)
+
+// Group the data by the first element (Reg.No)
+val groupedRDD = data.groupBy(_._1)
+
+// Display the grouped RDD
+println("\nGrouped RDD:")
+groupedRDD.collect().foreach(println)
+
+// Count the occurrences of each key (Reg.No)
+val countByKey = data.map { case (regNo, _, _, _) => (regNo, 1) }.reduceByKey(_ + _)
+
+// Display the count of occurrences for each key
+println("\nCount of occurrences for each Reg.No:")
+countByKey.collect().foreach(println)
+
+countByKey.foreach(println)
+
+Sorted RDD:
+(10,ronald,57,65000)
+(21,cassy,51,40000)
+(21,cassy,51,40000)
+(24,John,26,30000)
+(24,John,26,30000)
+(34,Jack,40,80000)
+(34,Yash,40,60000)
+(42,Lion,42,56000)
+(45,Jash,35,75000)
+(45,Jash,35,75000)
+(61,Joshi,25,35000)
+(62,kate,50,76000)
+(67,Smith,20,24000)
+(67,Smith,20,24000)
+
+Grouped RDD:
+(34,CompactBuffer((34,Jack,40,80000), (34,Yash,40,60000)))
+(67,CompactBuffer((67,Smith,20,24000), (67,Smith,20,24000)))
+(21,CompactBuffer((21,cassy,51,40000), (21,cassy,51,40000)))
+(24,CompactBuffer((24,John,26,30000), (24,John,26,30000)))
+(42,CompactBuffer((42,Lion,42,56000)))
+(10,CompactBuffer((10,ronald,57,65000)))
+(61,CompactBuffer((61,Joshi,25,35000)))
+(45,CompactBuffer((45,Jash,35,75000), (45,Jash,35,75000)))
+(62,CompactBuffer((62,kate,50,76000)))
+
+Count of occurrences for each Reg.No:
+(34,2)
+(67,2)
+(21,2)
+(24,2)
+(42,1)
+(10,1)
+(61,1)
+(45,2)
+(62,1)
+
+Week 6
+Mid Semester Exam
+
+Week 7 
+Question 1
+
+user_id,page_id,timestamp,action
+1,101,2024-04-01 10:00:00,click
+1,102,2024-04-01 10:05:00,view
+2,201,2024-04-01 10:10:00,click
+2,202,2024-04-01 10:15:00,click
+1,103,2024-04-01 10:20:00,purchase
+3,301,2024-04-01 10:25:00,view
+1,104,2024-04-01 10:30:00,click
+2,203,2024-04-01 10:35:00,purchase
+3,302,2024-04-01 10:40:00,click
+3,303,2024-04-01 10:45:00,view
+
+exec(open("q1.py").read())
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, concat, lag, lit, max
+from pyspark.sql.window import Window
+
+# Create SparkSession
+spark = SparkSession.builder \
+    .appName("Clickstream Analysis") \
+    .getOrCreate()
+
+# Load data into PySpark DataFrame
+clickstream_df = spark.read.csv("clickstream_data.csv", header=True)
+
+# Display schema and first 5 rows
+clickstream_df.printSchema()
+clickstream_df.show(5)
+
+# Calculate total number of clicks, views, and purchases for each user
+user_actions_count = clickstream_df.groupBy("user_id", "action").count()
+
+# Pivot to get counts for each action type per user
+user_actions_count_pivot = user_actions_count.groupBy("user_id").pivot("action").sum("count").fillna(0)
+
+# Display most common sequence of actions
+window_spec = Window.partitionBy("user_id").orderBy("timestamp")
+
+# Concatenate actions into sequences per user
+clickstream_df = clickstream_df.withColumn("prev_action", lag("action").over(window_spec))
+
+# Drop rows where prev_action is null (first action of a user)
+clickstream_df = clickstream_df.filter(col("prev_action").isNotNull())
+
+# Concatenate current and previous actions to form sequences
+clickstream_df = clickstream_df.withColumn("action_sequence", concat(col("prev_action"), lit(" -> "), col("action")))
+
+# Count occurrences of action sequences per user
+common_action_sequence = clickstream_df.groupBy("user_id", "action_sequence").count()
+
+# Find most common sequence per user
+user_most_common_sequence = common_action_sequence.withColumn("max_count", max("count").over(Window.partitionBy("user_id"))) \
+    .filter(col("count") == col("max_count")) \
+    .drop("max_count", "count")
+
+# Display most common sequence of actions per user
+user_most_common_sequence.show()
+
+# Stop SparkSession
+spark.stop()
+
+
+root
+ |-- user_id: string (nullable = true)
+ |-- page_id: string (nullable = true)
+ |-- timestamp: string (nullable = true)
+ |-- action: string (nullable = true)
+
++-------+-------+-------------------+--------+
+|user_id|page_id|          timestamp|  action|
++-------+-------+-------------------+--------+
+|      1|    101|2024-04-01 10:00:00|   click|
+|      1|    102|2024-04-01 10:05:00|    view|
+|      2|    201|2024-04-01 10:10:00|   click|
+|      2|    202|2024-04-01 10:15:00|   click|
+|      1|    103|2024-04-01 10:20:00|purchase|
++-------+-------+-------------------+--------+
+only showing top 5 rows
+
++-------+-----------------+
+|user_id|  action_sequence|
++-------+-----------------+
+|      1|    click -> view|
+|      1| view -> purchase|
+|      1|purchase -> click|
+|      2|   click -> click|
+|      2|click -> purchase|
+|      3|    view -> click|
+|      3|    click -> view|
++-------+-----------------+
+
+
+Question 2
+Timestamp, user_id, page_id, action
+2024-04-01 08:00:00, 1, 123, view
+2024-04-01 08:05:00, 1, 456, click
+2024-04-01 08:10:00, 2, 789, view
+2024-04-01 08:15:00, 1, 789, purchase
+2024-04-01 08:20:00, 2, 123, view
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+// Create SparkSession
+val spark = SparkSession.builder()
+  .appName("WebLogAnalysis")
+  .getOrCreate()
+
+// Read the log file into a DataFrame
+val df = spark.read
+  .option("header", "true")
+  .option("inferSchema", "true")
+  .csv("web_logs.txt")
+
+// Trim column names to remove any leading or trailing spaces
+val trimmedDF = df.columns.foldLeft(df) { (accDF, columnName) =>
+  accDF.withColumnRenamed(columnName, columnName.trim)
+}
+
+// Calculate total time spent on the website for each user
+// Assuming you meant to calculate the duration between actions, this part needs to be designed based on your log structure, 
+// such as by calculating the difference between successive timestamps for each user.
+// The example below proceeds directly to grouping without calculating actual time spent due to missing duration logic.
+val userTotalTime = trimmedDF.groupBy("user_id")
+  .agg(sum("timestamp").as("total_time_spent")) // Placeholder for actual time spent calculation
+
+// Display the most engaged users
+userTotalTime.orderBy(desc("total_time_spent")).show()
+
++-------+----------------+
+|user_id|total_time_spent|
++-------+----------------+
+|    1.0|     5.1358764E9|
+|    2.0|     3.4239186E9|
++-------+----------------+
+
+
+Week 8 
+Question 1
+exec(open("q1.py").read())
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import regexp_replace
+
+# Initialize Spark Session
+spark = SparkSession.builder.appName("StringReplacementPySpark").getOrCreate()
+
+# Sample data with Amount explicitly defined as float
+data = [
+    (1000210, "Platinum Card", "3/17/2018", "Fast Food", "Debit", 23.34),
+    (1000210, "Silver Card", "3/19/2018", "Restaurants", "Debit", 36.48),
+    (1000210, "Checking", "3/19/2018", "Utilities", "Debit", 35.0),  # Ensure this is a float
+    (1000210, "Platinum Card", "3/20/2018", "Shopping", "Debit", 14.97),
+    (1000210, "Silver Card", "3/22/2018", "Gas & Fuel", "Debit", 30.55),
+    (1000210, "Platinum Card", "3/23/2018", "Credit Card Payment", "Debit", 559.91),
+    (1000210, "Checking", "3/23/2018", "Credit Card Payment", "Debit", 559.91)
+]
+
+# Define schema
+schema = ["Customer_NO", "Card_type", "Date", "Category", "Transaction_Type", "Amount"]
+
+# Create DataFrame
+df = spark.createDataFrame(data, schema=schema)
+
+# Replace string in Card_type column
+df = df.withColumn("Card_type", regexp_replace("Card_type", "Checking", "Cash"))
+
+# Show the result
+df.show()
+
++-----------+-------------+---------+-------------------+----------------+------+
+|Customer_NO|    Card_type|     Date|           Category|Transaction_Type|Amount|
++-----------+-------------+---------+-------------------+----------------+------+
+|    1000210|Platinum Card|3/17/2018|          Fast Food|           Debit| 23.34|
+|    1000210|  Silver Card|3/19/2018|        Restaurants|           Debit| 36.48|
+|    1000210|         Cash|3/19/2018|          Utilities|           Debit|  35.0|
+|    1000210|Platinum Card|3/20/2018|           Shopping|           Debit| 14.97|
+|    1000210|  Silver Card|3/22/2018|         Gas & Fuel|           Debit| 30.55|
+|    1000210|Platinum Card|3/23/2018|Credit Card Payment|           Debit|559.91|
+|    1000210|         Cash|3/23/2018|Credit Card Payment|           Debit|559.91|
++-----------+-------------+---------+-------------------+----------------+------+
+
+Scala version
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.regexp_replace
+
+// Initialize Spark Session
+val spark = SparkSession.builder
+  .appName("StringReplacementScala")
+  .getOrCreate()
+
+import spark.implicits._
+
+// Sample data
+val data = Seq(
+  (1000210, "Platinum Card", "3/17/2018", "Fast Food", "Debit", 23.34),
+  (1000210, "Silver Card", "3/19/2018", "Restaurants", "Debit", 36.48),
+  (1000210, "Checking", "3/19/2018", "Utilities", "Debit", 35.00),
+  (1000210, "Platinum Card", "3/20/2018", "Shopping", "Debit", 14.97),
+  (1000210, "Silver Card", "3/22/2018", "Gas & Fuel", "Debit", 30.55),
+  (1000210, "Platinum Card", "3/23/2018", "Credit Card Payment", "Debit", 559.91),
+  (1000210, "Checking", "3/23/2018", "Credit Card Payment", "Debit", 559.91)
+)
+
+// Create DataFrame from the sequence of data
+val df = spark.createDataFrame(data).toDF("Customer_NO", "Card_type", "Date", "Category", "Transaction_Type", "Amount")
+
+// Using regexp_replace to replace "Checking" with "Cash" in the "Card_type" column
+val updatedDf = df.withColumn("Card_type", regexp_replace($"Card_type", "Checking", "Cash"))
+
+// Show the updated DataFrame
+updatedDf.show()
+
+// Stop the Spark session (optional, depending on your application's requirements)
+// spark.stop()
+
++-----------+-------------+---------+-------------------+----------------+------+
+|Customer_NO|    Card_type|     Date|           Category|Transaction_Type|Amount|
++-----------+-------------+---------+-------------------+----------------+------+
+|    1000210|Platinum Card|3/17/2018|          Fast Food|           Debit| 23.34|
+|    1000210|  Silver Card|3/19/2018|        Restaurants|           Debit| 36.48|
+|    1000210|         Cash|3/19/2018|          Utilities|           Debit|  35.0|
+|    1000210|Platinum Card|3/20/2018|           Shopping|           Debit| 14.97|
+|    1000210|  Silver Card|3/22/2018|         Gas & Fuel|           Debit| 30.55|
+|    1000210|Platinum Card|3/23/2018|Credit Card Payment|           Debit|559.91|
+|    1000210|         Cash|3/23/2018|Credit Card Payment|           Debit|559.91|
++-----------+-------------+---------+-------------------+----------------+------+
+
+
+Week 9
+hive> show databases;
+OK
+default
+Time taken: 0.534 seconds, Fetched: 1 row(s)
+`````````hive> create database e;
+OK
+Time taken: 0.064 seconds
+
+`````````hive> show databases;
+OK
+emp
+default
+Time taken: 0.534 seconds, Fetched: 1 row(s)
+
+
+`````````hive> use e
+    > ;
+OK
+Time taken: 0.026 seconds
+`````````hive> CREATE EXTERNAL TABLE IF NOT EXISTS Employee_external (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    >     work_day DATE
+    > )
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY ','
+    > LOCATION '/bda246';
+OK
+Time taken: 0.239 seconds
+`````````hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    >     work_day DATE
+    > )
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY ','
+    > ;
+OK
+Time taken: 0.256 seconds
+hive> show tables;
+OK
+employee_external
+employee_internal
+Time taken: 0.03 seconds, Fetched: 2 row(s)
+hive> LOAD DATA INPATH '/bda246/data.csv' OVERWRITE INTO TABLE Employee_external
+    > ;
+FAILED: SemanticException Line 1:17 Invalid path ''/bda246/data.csv'': No files matching path hdfs://master:9000/bda246/data.csv
+hive> LOAD DATA INPATH '/workdir/data.csv' OVERWRITE INTO TABLE Employee_external;
+FAILED: SemanticException Line 1:17 Invalid path ''/workdir/data.csv'': No files matching path hdfs://master:9000/workdir/data.csv
+````````````hive> LOAD DATA local INPATH '/workdir/data.csv' OVERWRITE INTO TABLE Employee_external;
+Loading data to table e.employee_external
+OK
+Time taken: 0.858 seconds
+hive> select * from employee_external;
+OK
+NULL    NULL    first_name      family_name     gender  NULL
+1       1990-05-15      John    Doe     male    2022-01-01
+2       1985-08-21      Jane    Smith   female  2022-01-02
+3       1978-03-10      Michael Johnson male    2022-01-03
+4       1992-11-28      Emily   Williams        female  2022-01-04
+5       1980-07-17      Christopher     Brown   male    2022-01-05
+6       1987-09-30      Amanda  Jones   female  2022-01-06
+7       1975-12-12      David   Miller  male    2022-01-07
+8       1995-04-25      Sarah   Davis   female  2022-01-08
+9       1983-06-08      James   Wilson  male    2022-01-09
+10      1970-02-14      Michelle        Anderson        female  2022-01-10
+Time taken: 0.942 seconds, Fetched: 11 row(s)
+``````````hive> INSERT OVERWRITE TABLE Employee_internal
+    > SELECT * FROM Employee_external;
+Query ID = root_20240331120838_6b86bb4c-df57-472a-8e94-e8279559d87a
+Total jobs = 3
+Launching Job 1 out of 3
+Number of reduce tasks is set to 0 since there's no reduce operator
+Starting Job = job_1711886715519_0001, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0001/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0001
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 0
+2024-03-31 12:08:48,980 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:08:53,116 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 2.19 sec
+MapReduce Total cumulative CPU time: 2 seconds 190 msec
+Ended Job = job_1711886715519_0001
+Stage-4 is selected by condition resolver.
+Stage-3 is filtered out by condition resolver.
+Stage-5 is filtered out by condition resolver.
+Moving data to directory hdfs://master:9000/user/hive/warehouse/e.db/employee_internal/.hive-staging_hive_2024-03-31_12-08-38_856_4701225916364625496-1/-ext-10000
+Loading data to table e.employee_internal
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1   Cumulative CPU: 2.19 sec   HDFS Read: 6505 HDFS Write: 554 SUCCESS
+Total MapReduce CPU Time Spent: 2 seconds 190 msec
+OK
+Time taken: 16.58 seconds
+hive> select * from employee_internal;
+OK
+NULL    NULL    first_name      family_name     gender  NULL
+1       1990-05-15      John    Doe     male    2022-01-01
+2       1985-08-21      Jane    Smith   female  2022-01-02
+3       1978-03-10      Michael Johnson male    2022-01-03
+4       1992-11-28      Emily   Williams        female  2022-01-04
+5       1980-07-17      Christopher     Brown   male    2022-01-05
+6       1987-09-30      Amanda  Jones   female  2022-01-06
+7       1975-12-12      David   Miller  male    2022-01-07
+8       1995-04-25      Sarah   Davis   female  2022-01-08
+9       1983-06-08      James   Wilson  male    2022-01-09
+10      1970-02-14      Michelle        Anderson        female  2022-01-10
+Time taken: 0.107 seconds, Fetched: 11 row(s)
+hive> ALTER TABLE Employee_internal ADD PARTITION (gender='male');
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=male}
+hive> ALTER TABLE Employee_internal ADD PARTITION (gender='female');
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=female}
+hive> describe employee_internal;
+OK
+employee_id             int
+birthday                date
+first_name              string
+family_name             string
+gender                  string
+work_day                date
+Time taken: 0.049 seconds, Fetched: 6 row(s)
+hive> alter table employee_interna; add partition (gender="male")
+    > ;
+NoViableAltException(-1@[])
+        at org.apache.hadoop.hive.ql.parse.HiveParser.alterTableStatementSuffix(HiveParser.java:7971)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.alterStatement(HiveParser.java:7447)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4337)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 1:28 cannot recognize input near '<EOF>' '<EOF>' '<EOF>' in alter table statement
+hive> alter table employee_internal add partition (gender="male");
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=male}
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     work_day DATE
+    > )
+    > PARTITIONED BY (gender STRING);
+OK
+Time taken: 0.081 seconds
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='male') SELECT * FROM Employee_external WHERE gender='male';
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=male}
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='female') SELECT * FROM Employee_external WHERE gender='female';
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=female}
+hive>
+    > ;
+hive> alter table employee_internal add partition (gender="male");
+FAILED: ValidationFailureSemanticException e.employee_internal table is not partitioned but partition spec exists: {gender=male}
+hive> drop table employee_internal;
+OK
+Time taken: 0.415 seconds
+``````````hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     work_day DATE
+    > )
+    > PARTITIONED BY (gender STRING);
+OK
+Time taken: 0.155 seconds
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='male') SELECT * FROM Employee_external WHERE gender='male';
+FAILED: SemanticException [Error 10044]: Line 1:23 Cannot insert into target table because column number/types are different ''male'': Table insclause-0 has 5 columns, but query has 6 columns.
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='female') SELECT * FROM Employee_external WHERE gender='female';
+FAILED: SemanticException [Error 10044]: Line 1:23 Cannot insert into target table because column number/types are different ''female'': Table insclause-0 has 5 columns, but query has 6 columns.
+hive> select * from employee_external;
+OK
+NULL    NULL    first_name      family_name     gender  NULL
+1       1990-05-15      John    Doe     male    2022-01-01
+2       1985-08-21      Jane    Smith   female  2022-01-02
+3       1978-03-10      Michael Johnson male    2022-01-03
+4       1992-11-28      Emily   Williams        female  2022-01-04
+5       1980-07-17      Christopher     Brown   male    2022-01-05
+6       1987-09-30      Amanda  Jones   female  2022-01-06
+7       1975-12-12      David   Miller  male    2022-01-07
+8       1995-04-25      Sarah   Davis   female  2022-01-08
+9       1983-06-08      James   Wilson  male    2022-01-09
+10      1970-02-14      Michelle        Anderson        female  2022-01-10
+Time taken: 0.128 seconds, Fetched: 11 row(s)
+hive> drop table employee_internal;
+OK
+Time taken: 0.092 seconds
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    > Display all 634 possibilities? (y or n)
+    > root@eee13448bcb2:/#
+root@eee13448bcb2:/# CREATE TABLE IF NOT EXISTS Employee_internal (
+    employee_id INT,
+    birthday DATE,
+    first_name STRING,
+    family_name STRING,
+    work_day DATE^C
+root@eee13448bcb2:/# hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/usr/local/hive/lib/log4j-slf4j-impl-2.17.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/usr/local/hadoop/share/hadoop/common/lib/slf4j-reload4j-1.7.36.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Hive Session ID = 3fefd1ac-1bdc-4cc8-a747-404cbe8d5b84
+
+Logging initialized using configuration in jar:file:/usr/local/hive/lib/hive-common-3.1.3.jar!/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+Hive Session ID = f3274678-5eaf-47b7-af10-1f1aa5df2dde
+hive> show databases;
+OK
+default
+e
+Time taken: 0.837 seconds, Fetched: 2 row(s)
+hive> use e;
+OK
+Time taken: 0.031 seconds
+hive> show tables;
+OK
+employee_external
+Time taken: 0.059 seconds, Fetched: 1 row(s)
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING
+    > Display all 634 possibilities? (y or n)
+    > ;
+MismatchedTokenException(-1!=374)
+        at org.antlr.runtime.BaseRecognizer.recoverFromMismatchedToken(BaseRecognizer.java:617)
+        at org.antlr.runtime.BaseRecognizer.match(BaseRecognizer.java:115)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6666)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 7:0 mismatched input '<EOF>' expecting ) near 'STRING' in create table statement
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    > work_day DATE)
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY ','
+    > PARTITIONED BY
+    > (gender STRING);
+NoViableAltException(225@[2032:103: ( tableRowFormatMapKeysIdentifier )?])
+        at org.antlr.runtime.DFA.noViableAlt(DFA.java:158)
+        at org.antlr.runtime.DFA.predict(DFA.java:116)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.rowFormatDelimited(HiveParser.java:27784)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.tableRowFormat(HiveParser.java:28001)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6765)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 10:0 cannot recognize input near 'PARTITIONED' 'BY' '(' in serde properties specification
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    >     work_day DATE)
+    > ROW FORMAT DELIMITED
+    > FIELDS SEPERATED BY ','
+    > PARTITIONED BY (gender STRING);
+MismatchedTokenException(24!=306)
+        at org.antlr.runtime.BaseRecognizer.recoverFromMismatchedToken(BaseRecognizer.java:617)
+        at org.antlr.runtime.BaseRecognizer.match(BaseRecognizer.java:115)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.tableRowFormatFieldIdentifier(HiveParser.java:28706)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.rowFormatDelimited(HiveParser.java:27753)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.tableRowFormat(HiveParser.java:28001)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6765)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 9:7 mismatched input 'SEPERATED' expecting TERMINATED near 'FIELDS' in table row format's field separator
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     >     employee_id INT,
+    >     >     birthday DATE,
+    >     >     first_name STRING,
+    >     >     family_name STRING,
+    >     >     gender STRING,
+    >     >     work_day DATE)
+    >     > ROW FORMAT DELIMITED
+    >     > FIELDS SEPERATED BY ','
+    >     >     family_name STRING,;
+NoViableAltException(21@[2389:1: columnNameTypeOrConstraint : ( ( tableConstraint ) | ( columnNameTypeConstraint ) );])
+        at org.antlr.runtime.DFA.noViableAlt(DFA.java:158)
+        at org.antlr.runtime.DFA.predict(DFA.java:144)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.columnNameTypeOrConstraint(HiveParser.java:34044)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.columnNameTypeOrConstraintList(HiveParser.java:29819)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6662)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 2:4 cannot recognize input near '>' 'employee_id' 'INT' in column name or constraint
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     >     employee_id INT,
+    >     >     birthday DATE,
+    >     >     first_name STRING,
+    >     >     family_name STRING,
+    >     >     gender STRING,
+    >     >     work_day DATE)
+    >     > ROW FORMAT DELIMITED
+    >     > FIELDS SEPERATED BY ','
+    >     > PARTITIONED BY (gender STRING);;
+NoViableAltException(21@[2389:1: columnNameTypeOrConstraint : ( ( tableConstraint ) | ( columnNameTypeConstraint ) );])
+        at org.antlr.runtime.DFA.noViableAlt(DFA.java:158)
+        at org.antlr.runtime.DFA.predict(DFA.java:144)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.columnNameTypeOrConstraint(HiveParser.java:34044)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.columnNameTypeOrConstraintList(HiveParser.java:29819)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6662)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 2:4 cannot recognize input near '>' 'employee_id' 'INT' in column name or constraint
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    >     work_day DATE)
+    > ROW FORMAT DELIMITED
+    > FIELDS TERMINATED BY ','
+    > PARTITIONED BY (gender STRING);
+NoViableAltException(225@[2032:103: ( tableRowFormatMapKeysIdentifier )?])
+        at org.antlr.runtime.DFA.noViableAlt(DFA.java:158)
+        at org.antlr.runtime.DFA.predict(DFA.java:116)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.rowFormatDelimited(HiveParser.java:27784)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.tableRowFormat(HiveParser.java:28001)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.createTableStatement(HiveParser.java:6765)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4295)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 10:0 cannot recognize input near 'PARTITIONED' 'BY' '(' in serde properties specification
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     work_day DATE
+    > )
+    > PARTITIONED BY (gender STRING);
+OK
+Time taken: 1.141 seconds
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='male') SELECT * FROM Employee_external WHERE gender='male';
+FAILED: SemanticException [Error 10044]: Line 1:23 Cannot insert into target table because column number/types are different ''male'': Table insclause-0 has 5 columns, but query has 6 columns.
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='female') SELECT * FROM Employee_external WHERE gender='female';
+FAILED: SemanticException [Error 10044]: Line 1:23 Cannot insert into target table because column number/types are different ''female'': Table insclause-0 has 5 columns, but query has 6 columns.
+hive> drop employee_internal;
+NoViableAltException(24@[917:1: ddlStatement : ( createDatabaseStatement | switchDatabaseStatement | dropDatabaseStatement | createTableStatement | dropTableStatement | truncateTableStatement | alterStatement | descStatement | showStatement | metastoreCheck | createViewStatement | createMaterializedViewStatement | dropViewStatement | dropMaterializedViewStatement | createFunctionStatement | createMacroStatement | dropFunctionStatement | reloadFunctionStatement | dropMacroStatement | analyzeStatement | lockStatement | unlockStatement | lockDatabase | unlockDatabase | createRoleStatement | dropRoleStatement | ( grantPrivileges )=> grantPrivileges | ( revokePrivileges )=> revokePrivileges | showGrants | showRoleGrants | showRolePrincipals | showRoles | grantRole | revokeRole | setRole | showCurrentRole | abortTransactionStatement | killQueryStatement | resourcePlanDdlStatements );])
+        at org.antlr.runtime.DFA.noViableAlt(DFA.java:158)
+        at org.antlr.runtime.DFA.predict(DFA.java:144)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.ddlStatement(HiveParser.java:4244)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.execStatement(HiveParser.java:2494)
+        at org.apache.hadoop.hive.ql.parse.HiveParser.statement(HiveParser.java:1420)
+        at org.apache.hadoop.hive.ql.parse.ParseDriver.parse(ParseDriver.java:220)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:74)
+        at org.apache.hadoop.hive.ql.parse.ParseUtils.parse(ParseUtils.java:67)
+        at org.apache.hadoop.hive.ql.Driver.compile(Driver.java:616)
+        at org.apache.hadoop.hive.ql.Driver.compileInternal(Driver.java:1826)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1773)
+        at org.apache.hadoop.hive.ql.Driver.compileAndRespond(Driver.java:1768)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.compileAndRespond(ReExecDriver.java:126)
+        at org.apache.hadoop.hive.ql.reexec.ReExecDriver.run(ReExecDriver.java:214)
+        at org.apache.hadoop.hive.cli.CliDriver.processLocalCmd(CliDriver.java:239)
+        at org.apache.hadoop.hive.cli.CliDriver.processCmd(CliDriver.java:188)
+        at org.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:402)
+        at org.apache.hadoop.hive.cli.CliDriver.executeDriver(CliDriver.java:821)
+        at org.apache.hadoop.hive.cli.CliDriver.run(CliDriver.java:759)
+        at org.apache.hadoop.hive.cli.CliDriver.main(CliDriver.java:683)
+        at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.apache.hadoop.util.RunJar.run(RunJar.java:328)
+        at org.apache.hadoop.util.RunJar.main(RunJar.java:241)
+FAILED: ParseException line 1:5 cannot recognize input near 'drop' 'employee_internal' '<EOF>' in ddl statement
+hive> drop table employee_internal;
+OK
+Time taken: 0.556 seconds
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     gender STRING,
+    >     work_day DATE
+    > )
+    > PARTITIONED BY (gender STRING);
+FAILED: SemanticException [Error 10035]: Column repeated in partitioning columns
+hive> CREATE TABLE IF NOT EXISTS Employee_internal (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     work_day DATE
+    > )
+    > PARTITIONED BY (gender STRING);
+OK
+Time taken: 0.189 seconds
+hive> describe employee_external;
+OK
+employee_id             int
+birthday                date
+first_name              string
+family_name             string
+gender                  string
+work_day                date
+Time taken: 0.061 seconds, Fetched: 6 row(s)
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='male') SELECT employee_id,birthday,first_name,family_name,work_day FROM Employee_external WHERE gender='male'
+    > ;
+Query ID = root_20240331122618_72f68172-f303-4a02-94f7-ed7fa4e9d24f
+Total jobs = 3
+Launching Job 1 out of 3
+Number of reduce tasks is set to 0 since there's no reduce operator
+Starting Job = job_1711886715519_0002, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0002/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0002
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 0
+2024-03-31 12:26:30,751 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:26:37,324 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 3.88 sec
+MapReduce Total cumulative CPU time: 3 seconds 880 msec
+Ended Job = job_1711886715519_0002
+Stage-4 is selected by condition resolver.
+Stage-3 is filtered out by condition resolver.
+Stage-5 is filtered out by condition resolver.
+Moving data to directory hdfs://master:9000/user/hive/warehouse/e.db/employee_internal/gender=male/.hive-staging_hive_2024-03-31_12-26-18_353_2577582238036626323-1/-ext-10000
+Loading data to table e.employee_internal partition (gender=male)
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1   Cumulative CPU: 3.88 sec   HDFS Read: 7052 HDFS Write: 277 SUCCESS
+Total MapReduce CPU Time Spent: 3 seconds 880 msec
+OK
+Time taken: 21.969 seconds
+hive> select * from employee_internal;
+OK
+1       1990-05-15      John    Doe     2022-01-01      male
+3       1978-03-10      Michael Johnson 2022-01-03      male
+5       1980-07-17      Christopher     Brown   2022-01-05      male
+7       1975-12-12      David   Miller  2022-01-07      male
+9       1983-06-08      James   Wilson  2022-01-09      male
+Time taken: 0.384 seconds, Fetched: 5 row(s)
+hive> INSERT OVERWRITE TABLE Employee_internal PARTITION (gender='female') SELECT employee_id,birthday,first_name,family_name,work_day FROM Employee_external WHERE gender='female'
+    > ;
+Query ID = root_20240331122716_18dd36bc-9b7d-4b9d-97f3-da0b4c46a1de
+Total jobs = 3
+Launching Job 1 out of 3
+Number of reduce tasks is set to 0 since there's no reduce operator
+Starting Job = job_1711886715519_0003, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0003/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0003
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 0
+2024-03-31 12:27:27,033 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:27:33,314 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 3.64 sec
+MapReduce Total cumulative CPU time: 3 seconds 640 msec
+Ended Job = job_1711886715519_0003
+Stage-4 is selected by condition resolver.
+Stage-3 is filtered out by condition resolver.
+Stage-5 is filtered out by condition resolver.
+Moving data to directory hdfs://master:9000/user/hive/warehouse/e.db/employee_internal/gender=female/.hive-staging_hive_2024-03-31_12-27-16_653_7713004058328050815-1/-ext-10000
+Loading data to table e.employee_internal partition (gender=female)
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1   Cumulative CPU: 3.64 sec   HDFS Read: 7083 HDFS Write: 280 SUCCESS
+Total MapReduce CPU Time Spent: 3 seconds 640 msec
+OK
+Time taken: 19.045 seconds
+hive> select * from employee_internal;
+OK
+2       1985-08-21      Jane    Smith   2022-01-02      female
+4       1992-11-28      Emily   Williams        2022-01-04      female
+6       1987-09-30      Amanda  Jones   2022-01-06      female
+8       1995-04-25      Sarah   Davis   2022-01-08      female
+10      1970-02-14      Michelle        Anderson        2022-01-10      female
+1       1990-05-15      John    Doe     2022-01-01      male
+3       1978-03-10      Michael Johnson 2022-01-03      male
+5       1980-07-17      Christopher     Brown   2022-01-05      male
+7       1975-12-12      David   Miller  2022-01-07      male
+9       1983-06-08      James   Wilson  2022-01-09      male
+Time taken: 0.196 seconds, Fetched: 10 row(s)
+`````````hive> CREATE TABLE Employee_external_bucketed (
+    >     employee_id INT,
+    >     birthday DATE,
+    >     first_name STRING,
+    >     family_name STRING,
+    >     work_day DATE,
+    >     gender STRING
+    > )
+    > CLUSTERED BY (employee_id) INTO 10 BUCKETS
+    > STORED AS ORC;
+OK
+Time taken: 0.149 seconds
+hive> INSERT INTO TABLE Employee_external_bucketed SELECT * FROM Employee_external;
+Query ID = root_20240331122930_406e8dc9-150b-40f8-bd70-55e1b45e385f
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 10
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1711886715519_0004, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0004/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0004
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 10
+2024-03-31 12:29:40,793 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:29:47,066 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 2.49 sec
+2024-03-31 12:29:57,729 Stage-1 map = 100%,  reduce = 10%, Cumulative CPU 9.13 sec
+2024-03-31 12:29:58,797 Stage-1 map = 100%,  reduce = 20%, Cumulative CPU 16.07 sec
+2024-03-31 12:29:59,918 Stage-1 map = 100%,  reduce = 30%, Cumulative CPU 22.82 sec
+2024-03-31 12:30:01,023 Stage-1 map = 100%,  reduce = 40%, Cumulative CPU 29.97 sec
+2024-03-31 12:30:02,113 Stage-1 map = 100%,  reduce = 50%, Cumulative CPU 37.58 sec
+2024-03-31 12:30:04,249 Stage-1 map = 100%,  reduce = 60%, Cumulative CPU 44.52 sec
+2024-03-31 12:30:09,554 Stage-1 map = 100%,  reduce = 80%, Cumulative CPU 60.07 sec
+2024-03-31 12:30:10,613 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 72.73 sec
+MapReduce Total cumulative CPU time: 1 minutes 12 seconds 730 msec
+Ended Job = job_1711886715519_0004
+Loading data to table e.employee_external_bucketed
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 10   Cumulative CPU: 72.73 sec   HDFS Read: 79424 HDFS Write: 7863 SUCCESS
+Total MapReduce CPU Time Spent: 1 minutes 12 seconds 730 msec
+OK
+Time taken: 41.555 seconds
+hive> select * from Employee_external_bucketed;
+OK
+10      1970-02-14      Michelle        Anderson        NULL    2022-01-10
+NULL    NULL    first_name      family_name     NULL    NULL
+1       1990-05-15      John    Doe     NULL    2022-01-01
+2       1985-08-21      Jane    Smith   NULL    2022-01-02
+3       1978-03-10      Michael Johnson NULL    2022-01-03
+4       1992-11-28      Emily   Williams        NULL    2022-01-04
+5       1980-07-17      Christopher     Brown   NULL    2022-01-05
+6       1987-09-30      Amanda  Jones   NULL    2022-01-06
+7       1975-12-12      David   Miller  NULL    2022-01-07
+8       1995-04-25      Sarah   Davis   NULL    2022-01-08
+9       1983-06-08      James   Wilson  NULL    2022-01-09
+Time taken: 0.251 seconds, Fetched: 11 row(s)
+``````````hive> SELECT *
+    > FROM Employee_external
+    > WHERE gender = 'male'
+    > ORDER BY birthday ASC
+    > LIMIT 10;
+Query ID = root_20240331123107_ca72edc3-669e-465c-82a8-6352f8017d1d
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1711886715519_0005, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0005/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0005
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+2024-03-31 12:31:16,596 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:31:22,810 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 4.07 sec
+2024-03-31 12:31:30,130 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 7.65 sec
+MapReduce Total cumulative CPU time: 7 seconds 650 msec
+Ended Job = job_1711886715519_0005
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 7.65 sec   HDFS Read: 14329 HDFS Write: 361 SUCCESS
+Total MapReduce CPU Time Spent: 7 seconds 650 msec
+OK
+7       1975-12-12      David   Miller  male    2022-01-07
+3       1978-03-10      Michael Johnson male    2022-01-03
+5       1980-07-17      Christopher     Brown   male    2022-01-05
+9       1983-06-08      James   Wilson  male    2022-01-09
+1       1990-05-15      John    Doe     male    2022-01-01
+Time taken: 24.269 seconds, Fetched: 5 row(s)
+`````````hive> SELECT *
+    > FROM Employee_external
+    > WHERE gender = 'male'
+    > ORDER BY birthday ASC
+    > LIMIT 10;
+Query ID = root_20240331123454_6790299d-a01f-4b36-9fbd-ecea2eca771c
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1711886715519_0006, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0006/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0006
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+2024-03-31 12:35:02,968 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:35:09,227 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 4.04 sec
+2024-03-31 12:35:14,509 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 7.17 sec
+MapReduce Total cumulative CPU time: 7 seconds 170 msec
+Ended Job = job_1711886715519_0006
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 7.17 sec   HDFS Read: 14361 HDFS Write: 361 SUCCESS
+Total MapReduce CPU Time Spent: 7 seconds 170 msec
+OK
+7       1975-12-12      David   Miller  male    2022-01-07
+3       1978-03-10      Michael Johnson male    2022-01-03
+5       1980-07-17      Christopher     Brown   male    2022-01-05
+9       1983-06-08      James   Wilson  male    2022-01-09
+1       1990-05-15      John    Doe     male    2022-01-01
+Time taken: 20.904 seconds, Fetched: 5 row(s)
+hive> SELECT *
+    > FROM Employee_external
+    > WHERE gender = 'female'
+    > ORDER BY birthday ASC
+    > LIMIT 10;
+Query ID = root_20240331123528_d56a8566-72ba-4a56-a237-c7a88f304923
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1711886715519_0007, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0007/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0007
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+2024-03-31 12:35:39,548 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:35:44,906 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 3.9 sec
+2024-03-31 12:35:52,250 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 7.23 sec
+MapReduce Total cumulative CPU time: 7 seconds 230 msec
+Ended Job = job_1711886715519_0007
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 7.23 sec   HDFS Read: 14346 HDFS Write: 372 SUCCESS
+Total MapReduce CPU Time Spent: 7 seconds 230 msec
+OK
+10      1970-02-14      Michelle        Anderson        female  2022-01-10
+2       1985-08-21      Jane    Smith   female  2022-01-02
+6       1987-09-30      Amanda  Jones   female  2022-01-06
+4       1992-11-28      Emily   Williams        female  2022-01-04
+8       1995-04-25      Sarah   Davis   female  2022-01-08
+Time taken: 25.501 seconds, Fetched: 5 row(s)
+`````````hive> SELECT *
+    > FROM Employee_internal
+    > ORDER BY birthday ASC
+    > LIMIT 10;
+Query ID = root_20240331123613_b190291d-726c-48ca-8903-219b89385bcb
+Total jobs = 1
+Launching Job 1 out of 1
+Number of reduce tasks determined at compile time: 1
+In order to change the average load for a reducer (in bytes):
+  set hive.exec.reducers.bytes.per.reducer=<number>
+In order to limit the maximum number of reducers:
+  set hive.exec.reducers.max=<number>
+In order to set a constant number of reducers:
+  set mapreduce.job.reduces=<number>
+Starting Job = job_1711886715519_0008, Tracking URL = http://eee13448bcb2:8088/proxy/application_1711886715519_0008/
+Kill Command = /usr/local/hadoop/bin/mapred job  -kill job_1711886715519_0008
+Hadoop job information for Stage-1: number of mappers: 1; number of reducers: 1
+2024-03-31 12:36:22,643 Stage-1 map = 0%,  reduce = 0%
+2024-03-31 12:36:28,062 Stage-1 map = 100%,  reduce = 0%, Cumulative CPU 2.6 sec
+2024-03-31 12:36:34,291 Stage-1 map = 100%,  reduce = 100%, Cumulative CPU 5.4 sec
+MapReduce Total cumulative CPU time: 5 seconds 400 msec
+Ended Job = job_1711886715519_0008
+MapReduce Jobs Launched:
+Stage-Stage-1: Map: 1  Reduce: 1   Cumulative CPU: 5.4 sec   HDFS Read: 13429 HDFS Write: 646 SUCCESS
+Total MapReduce CPU Time Spent: 5 seconds 400 msec
+OK
+10      1970-02-14      Michelle        Anderson        2022-01-10      female
+7       1975-12-12      David   Miller  2022-01-07      male
+3       1978-03-10      Michael Johnson 2022-01-03      male
+5       1980-07-17      Christopher     Brown   2022-01-05      male
+9       1983-06-08      James   Wilson  2022-01-09      male
+2       1985-08-21      Jane    Smith   2022-01-02      female
+6       1987-09-30      Amanda  Jones   2022-01-06      female
+1       1990-05-15      John    Doe     2022-01-01      male
+4       1992-11-28      Emily   Williams        2022-01-04      female
+8       1995-04-25      Sarah   Davis   2022-01-08      female
+Time taken: 22.108 seconds, Fetched: 10 row(s)
+````````hive> ALTER TABLE Employee_internal CHANGE family_name last_name STRING;
+
+
+Week 10
+q1.
+hbase:001:0> create 'emp','rowid','personal_data','professional_data'
+Created table emp
+Took 1.0852 seconds
+
+q2.
+put 'emp', '1', 'personal_data:name', 'Angela'; put 'emp', '1', 'personal_data:city', 'chicago'; put 'emp', '1', 'personal_data:age', '31'; put 'emp', '1', 'professional_data:designation', 'Architect'; put 'emp', '1', 'professional_data:salary', '70000'
+put 'emp', '2', 'personal_data:name', 'dwayne'; put 'emp', '2', 'personal_data:city', 'bostan'; put 'emp', '2', 'personal_data:age', '35'; put 'emp', '2', 'professional_data:designation', 'Web devloper'; put 'emp', '2', 'professional_data:salary', '65000'
+put 'emp', '3', 'personal_data:name', 'david'; put 'emp', '3', 'personal_data:city', 'seattle'; put 'emp', '3', 'personal_data:age', '29'; put 'emp', '3', 'professional_data:designation', 'Engineer'; put 'emp', '3', 'professional_data:salary', '55000'
+put 'emp', '4', 'personal_data:name', 'rahul'; put 'emp', '4', 'personal_data:city', 'USA'; put 'emp', '4', 'personal_data:age', '31'; put 'emp', '4', 'professional_data:designation', 'architect'; put 'emp', '4', 'professional_data:salary', '70000'
+put 'emp', '5', 'personal_data:name', 'jony'; put 'emp', '5', 'personal_data:city', 'chicago'; put 'emp', '5', 'personal_data:age', '29'; put 'emp', '5', 'professional_data:designation', 'Data analyst'; put 'emp', '5', 'professional_data:salary', '80000'
+put 'emp', '6', 'personal_data:name', 'sony'; put 'emp', '6', 'personal_data:city', 'bostan'; put 'emp', '6', 'personal_data:age', '29'; put 'emp', '6', 'professional_data:designation', 'Data analyst'; put 'emp', '6', 'professional_data:salary', '80000'
+
+
+hbase:029:0> describe 'emp'
+Table emp is ENABLED
+emp, {TABLE_ATTRIBUTES => {METADATA => {'hbase.store.file-tracker.impl' => 'DEFAULT'}}}
+COLUMN FAMILIES DESCRIPTION
+{NAME => 'personal_data', INDEX_BLOCK_ENCODING => 'NONE', VERSIONS => '1', KEEP_DELETED_CELLS => 'FALSE', DATA_BLOCK_ENCODING => 'NONE', TTL => 'FOREVER', MIN_VERSIONS => '0', REPLICATION_SCOPE => '0', BLOOMFI
+LTER => 'ROW', IN_MEMORY => 'false', COMPRESSION => 'NONE', BLOCKCACHE => 'true', BLOCKSIZE => '65536 B (64KB)'}
+
+{NAME => 'professional_data', INDEX_BLOCK_ENCODING => 'NONE', VERSIONS => '1', KEEP_DELETED_CELLS => 'FALSE', DATA_BLOCK_ENCODING => 'NONE', TTL => 'FOREVER', MIN_VERSIONS => '0', REPLICATION_SCOPE => '0', BLO
+OMFILTER => 'ROW', IN_MEMORY => 'false', COMPRESSION => 'NONE', BLOCKCACHE => 'true', BLOCKSIZE => '65536 B (64KB)'}
+
+{NAME => 'rowid', INDEX_BLOCK_ENCODING => 'NONE', VERSIONS => '1', KEEP_DELETED_CELLS => 'FALSE', DATA_BLOCK_ENCODING => 'NONE', TTL => 'FOREVER', MIN_VERSIONS => '0', REPLICATION_SCOPE => '0', BLOOMFILTER =>
+'ROW', IN_MEMORY => 'false', COMPRESSION => 'NONE', BLOCKCACHE => 'true', BLOCKSIZE => '65536 B (64KB)'}
+
+3 row(s)
+
+q3.
+put 'emp','3','professional_data:salary','65000'
+
+q4.
+hbase:033:0> scan 'emp', {FILTER => "ValueFilter(>=, 'binary:70000')"}
+ROW                                                   COLUMN+CELL
+ 1                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.824, value=chicago
+ 1                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.819, value=Angela
+ 1                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.831, value=Architect
+ 1                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:41.835, value=70000
+ 2                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.864, value=bostan
+ 2                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.859, value=dwayne
+ 2                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.871, value=Web devloper
+ 3                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.898, value=seattle
+ 3                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.895, value=david
+ 3                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.905, value=Engineer
+ 4                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.933, value=USA
+ 4                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.930, value=rahul
+ 4                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.940, value=architect
+ 4                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:41.943, value=70000
+ 5                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.968, value=chicago
+ 5                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.964, value=jony
+ 5                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.974, value=Data analyst
+ 5                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:41.977, value=80000
+ 6                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.999, value=bostan
+ 6                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.996, value=sony
+ 6                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:42.005, value=Data analyst
+ 6                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:42.009, value=80000
+6 row(s)
+Took 0.0760 seconds
+
+
+q5.
+
+hbase:044:0> get 'emp','3',{COLUMN => 'personal_data'}
+COLUMN                                                CELL
+ personal_data:age                                    timestamp=2024-04-01T13:39:41.901, value=29
+ personal_data:city                                   timestamp=2024-04-01T13:39:41.898, value=seattle
+ personal_data:name                                   timestamp=2024-04-01T13:39:41.895, value=david
+1 row(s)
+Took 0.0045 seconds
+
+q6.
+
+hbase:058:0> scan 'emp', {FILTER => "SingleColumnValueFilter('professional_data', 'designation', =, 'binary:Data analyst')"}
+ROW                                                   COLUMN+CELL
+ 5                                                    column=personal_data:age, timestamp=2024-04-01T13:39:41.971, value=29
+ 5                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.968, value=chicago
+ 5                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.964, value=jony
+ 5                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:41.974, value=Data analyst
+ 5                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:41.977, value=80000
+ 6                                                    column=personal_data:age, timestamp=2024-04-01T13:39:42.002, value=29
+ 6                                                    column=personal_data:city, timestamp=2024-04-01T13:39:41.999, value=bostan
+ 6                                                    column=personal_data:name, timestamp=2024-04-01T13:39:41.996, value=sony
+ 6                                                    column=professional_data:designation, timestamp=2024-04-01T13:39:42.005, value=Data analyst
+ 6                                                    column=professional_data:salary, timestamp=2024-04-01T13:39:42.009, value=80000
+2 row(s)
+Took 0.0099 seconds
+
+q7.
+
+hbase:067:0> count 'emp';
+6 row(s)
+Took 0.0291 seconds
+
+q8.
+
+hbase:070:0> alter 'emp', {NAME => 'personal_data', METHOD => 'delete', COLUMN => 'age'}
+Unknown argument ignored: COLUMN
+Updating all regions with the new schema...
+1/1 regions updated.
+Done.
+Took 1.8459 seconds
