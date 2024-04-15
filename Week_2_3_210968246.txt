@@ -1,0 +1,332 @@
+Week 2 
+Question 1:
+In recent years, the integration of artificial intelligence (AI) into modern healthcare has heralded a transformative era, revolutionizing the way medical professionals diagnose, treat, and manage patient care. AI algorithms, fueled by vast amounts of data, have demonstrated unparalleled capabilities in interpreting complex medical images, such as MRIs and CT scans, with remarkable accuracy. Moreover, machine learning models are being employed to predict disease outcomes, identify potential risks, and personalize treatment plans based on individual patient profiles. These advancements not only enhance the efficiency of healthcare delivery but also contribute to early detection and prevention of diseases. However, as AI continues to evolve, ethical considerations, data privacy concerns, and the need for interpretability pose significant challenges. Striking a balance between harnessing the potential of AI in healthcare and addressing these ethical and societal implications remains a critical focus for researchers, policymakers, and healthcare professionals alike.
+
+hadoop jar '/home/hdoop/hadoop/share/hadoop/tools/lib/hadoop-streaming-3.3.6.jar' -file mapper.py -mapper mapper.py -file redducer.py -reducer redducer.py -input /bda246/Week2/246inp.txt -output /bda246/Week2/output
+
+mapper.py
+#!/usr/bin/python3
+import sys
+for line in sys.stdin:
+    line = line.strip()
+    words = line.split()
+    for word in words:
+        print('%s\t%s' % (word,1))
+
+reducer.py
+#!/usr/bin/python3
+
+import sys
+
+current_word = None
+current_count = 0
+word = None
+
+# read the entire line from STDIN
+for line in sys.stdin:
+        # remove leading and trailing whitespace
+        line = line.strip()
+        # splitting the data on the basis of tab we have provided in mapper.py
+        word, count = line.split('\t', 1)
+        # convert count (currently a string) to int
+        try:
+                count = int(count)
+        except ValueError:
+                # count was not a number, so silently
+                # ignore/discard this line
+                continue
+
+        # this IF-switch only works because Hadoop sorts map output
+        # by key (here: word) before it is passed to the reducer
+        if current_word == word:
+                current_count += count
+        else:
+                if current_word:
+                        # write result to STDOUT
+                        print ('%s\t%s' % (current_word, current_count))
+                current_count = count
+                current_word = word
+
+# do not forget to output the last word if needed!
+if current_word == word:
+        print ('%s\t%s' % (current_word, current_count))
+
+Question 2:
+a,0,0,10
+a,0,1,20
+a,0,2,30
+a,1,0,40
+a,1,1,50
+a,1,2,60
+a,2,0,70
+a,2,1,80
+a,2,2,90
+b,0,0,1
+b,0,1,2
+b,0,2,3
+b,1,0,4
+b,1,1,5
+b,1,2,6
+b,2,0,7
+b,2,1,8
+b,2,2,9
+
+mapper.py
+ #!/usr/bin/python3
+import sys
+
+#cache_info = open("cache.txt").readLines()[0].split(",")
+row_a, col_b = 3,3
+
+for line in sys.stdin:
+        matrix_index, row, col, value = line.rstrip().split(",")
+        if matrix_index == "a":
+                        key = row + "," + col
+                        print ("%s\t%s\t%s"%(matrix_index,key,value))
+
+        else:
+                        key = row + "," + col
+                        print ("%s\t%s\t%s"%(matrix_index,key,value))
+
+reducer.py
+#!/usr/bin/python3
+
+import sys
+
+a = {}
+b = {}
+for line in sys.stdin:
+    line = line.strip()
+    key, pos, value = line.split('\t')
+    p = pos.split(',')
+    if key == 'a':
+        a[(int(p[0]), int(p[1]))] = int(value)
+    elif key == 'b':
+        b[(int(p[0]), int(p[1]))] = int(value)
+
+add = {}
+sub = {}
+mul = {}
+result = 0
+
+print("Addition of two matrices is :")
+for i in range(0, 3):
+    for j in range(0, 3):
+        add[(i, j)] = a[(i, j)] + b[(i, j)]
+        print("{0}  ".format(add[(i, j)]), end="")
+    print()
+
+print("\nSubtraction :")
+for i in range(0, 3):
+    for j in range(0, 3):
+        sub[(i, j)] = a[(i, j)] - b[(i, j)]
+        print("{0}  ".format(sub[(i, j)]), end="")
+    print()
+
+print("\nMultiplication :")
+for i in range(0, 3):
+    for j in range(0, 3):
+        for k in range(0, 3):
+            result = result + a[(i, k)] * b[(k, j)]
+        mul[(i, j)] = result
+        result = 0
+        print("{0}  ".format(mul[(i, j)]), end="")
+    print()
+
+print("\nTranspose of the product matrix :")
+for i in range(0, 3):
+    for j in range(0, 3):
+        print("{0}  ".format(mul[(j, i)]), end="")
+    print()
+
+Question 3:
+1001,John,85
+1002,Alice,78
+1003,Bob,92
+1004,Emma,65
+1005,David,89
+1006,Sarah,76
+1007,Michael,94
+1008,Olivia,71
+1009,James,83
+1010,Emily,90
+1011,Liam,79
+1012,Ava,88
+1013,Noah,74
+1014,Sophia,95
+1015,Ethan,67
+1016,Isabella,82
+1017,Logan,91
+1018,Mia,77
+1019,Mason,84
+1020,Amelia,70
+
+mapper.py
+#!/usr/bin/python3
+
+import sys
+
+for line in sys.stdin:
+    # Remove leading and trailing whitespaces
+    line = line.strip()
+
+    # Split the line into fields
+    fields = line.split(',')
+
+    # Check if the line has the expected number of fields
+    if len(fields) == 3:
+        registration_number, name, marks = fields
+
+        # Emit key-value pair (marks, registration_number, name)
+        print(f"{name}\t{marks},{registration_number}")
+
+reducer.py
+#!/usr/bin/python3
+
+import sys
+
+student_details = []
+
+for line in sys.stdin:
+    # Remove leading and trailing whitespaces
+    line = line.strip()
+
+    # Split the line into key and value
+    name, details = line.split('\t', 1)
+
+    # Split details into marks, registration_number
+    marks, registration_number = details.split(',')
+
+    # Append details for all students
+    student_details.append((marks, registration_number, name))
+
+# Sort student details by name before outputting
+student_details.sort(key=lambda x: x[2])
+
+for marks, reg_num, student_name in student_details:
+    print(f"{marks},{reg_num},{student_name}")
+
+to run: cat input.txt|python3 mapper.py|python3 reducer.py
+
+Week 3
+Question 1:
+EmpNo,EmpName,Unit,Designation,Salary
+1001,John,IMST,TA,30000
+1002,Jack,CLOUD,PM,80000
+1003,Joshi,FNPR,TA,35000
+1004,Jash,ECSSAP,PM,75000
+1005,Yash,FSADM,SPM,60000
+1006,Smith,ICSTA,TA,24000
+1007,Lion,IMST,SPM,56000
+1008,Kate,FNPR,PM,76000
+1009,Cassy,MFGADMT,TA,40000
+1010,Ronald,ECSSAP,SPM,65000
+
+mapper.py
+#!/usr/bin/python3 
+import sys
+
+for line in sys.stdin:
+    line = line.strip()
+    words = line.strip().split(',')
+
+    # Ensure that the line has enough elements to extract unit and salary
+    if len(words) >= 5:
+        emp_no, emp_name, unit, designation, salary = words
+        print(f"{unit}\t{salary}")
+
+reducer.py
+#!/usr/bin/python3
+
+import sys
+
+current_unit = None
+total_salary = 0
+
+for line in sys.stdin:
+    # Split the line into key and value
+    unit, salary_str = line.strip().split('\t')
+
+    # Skip the header line
+    if unit == 'Unit' and salary_str == 'Salary':
+        continue
+
+    try:
+        # Convert salary to an integer
+        salary = int(salary_str)
+
+        # Standardize unit names to uppercase for consistency
+        unit = unit.upper()
+
+        if current_unit == unit:
+            # Accumulate salary for the same unit
+            total_salary += salary
+        else:
+            # Output unit-wise total salary for the previous unit
+            if current_unit:
+                print(f"{current_unit}\t{total_salary}")
+
+            # Start accumulating salary for the new unit
+            current_unit = unit
+            total_salary = salary
+
+    except ValueError:
+        # Handle invalid salary values
+        print(f"Invalid salary value: {salary_str}")
+
+# Output unit-wise total salary for the last unit
+if current_unit:
+    print(f"{current_unit}\t{total_salary}")
+
+Question 2:
+2014    44
+2013    42
+2012    30
+2013    44
+2010    45
+2014    38
+2011    42
+2010    44
+
+mapper.py
+#!/usr/bin/python3
+
+import sys
+
+for line in sys.stdin:
+        line = line.strip()
+        year,temperature = line.split('\t')
+        print(f'{year}\t{temperature}')
+
+reducer.py
+#!/usr/bin/python3
+
+import sys
+
+current_year = None
+total_temp = 0
+count = 0
+min_temp = float('inf')
+max_temp = float('-inf')
+
+for line in sys.stdin:
+    line = line.strip()
+    year, temp = line.split('\t')
+    temp = float(temp)
+    if current_year and current_year != year:
+        avg_temp = total_temp / count
+        print("{0},{1},{2},{3}".format(current_year, avg_temp, min_temp, max_temp))
+        current_year = year
+        total_temp = 0
+        count = 0
+        min_temp = float('inf')
+        max_temp = float('-inf')
+    current_year = year
+    total_temp += temp
+    count += 1
+    min_temp = min(min_temp, temp)
+    max_temp = max(max_temp, temp)
+
+if current_year:
+    avg_temp = total_temp / count
+    print("{0},{1},{2},{3}".format(current_year, avg_temp, min_temp, max_temp))

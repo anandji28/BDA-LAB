@@ -1,0 +1,64 @@
+﻿Mahaveer R
+210968246
+
+start-all.sh (Type this command in master)
+jps (Type this command in master)
+
+jps (Type this command in client – check if it has DataNode, NodeManager, Jps)
+
+hdfs dfs -mkdir /bda246 (To create a directory)
+
+sudo nano f1.txt (ctrl + x, y, enter)
+cat f1.txt (To print contents of f1.txt)
+
+sudo gedit f2.txt (Another way to create a file)
+
+pwd (To get present working directory)
+
+localhost:9870 (Type in master’s browser)
+
+hdfs dfs -put /source /destination (To transfer file from local system to master)
+hdfs dfs -put /home/hdoop/f1.txt /bda246
+hdfs dfs -copyFromLocal /home/hdoop/f1.txt /bda246
+
+hdfs dfs -get /bda246 /home/hdoop/f1.txt (To transfer file from master to local)
+hdfs dfs -copyToLocal /bda246 /home/hdoop/f1.txt
+
+192.168.159.101:8088 (Type in browser to get resouce manager)
+
+
+Week 1 : Hadoop Distributed File System
+1. Write many Linux file operations
+2.
+i) hdfs dfs -mkdir /bda246/Week1/
+ii) sudo nano f1.txt
+iii) hdfs dfs -put /home/hdoop/f1.txt /bda246
+iv) hdfs dfs -cat /bda246/Week1/f1.txt
+v) hdfs dfs -get /bda246/Week1/f1.txt /home/hdoop/
+vi) hdfs dfs -moveFromLocal /home/hdoop/f3.txt /bda246/Week1
+vii) hdfs dfs -cp /bda246 /f1.txt /bda246/Week1/
+viii) hdfs dfs -mv /bda246 /f2.txt /bda246/Week1/
+ix) hadoop fs -du /bda246/Week1/
+	13  39   /bda246/Week1/f1.txt
+	21  63   /bda246/Week1/f2.txt
+	64  192  /bda246/Week1/f3.txt
+x) hadoop fs -du -s -h /bda246/Week1/
+	98  294  /bda246/Week1
+xi) hdfs dfs -stat %y /bda246/Week1/f1.txt
+	2024-01-09 04:30:46
+xii) hadoop fs -setrep -R 2 /bda246/Week1/f3.txt
+	Replication 2 set: /bda246/Week1/f3.txt
+xiii) hdfs dfs -ls /bda246/
+	Found 2 items
+	drwxr-xr-x   - hdoop supergroup          0 2024-01-09 10:52 /bda246/Week1
+	-rw-r--r--   3 hdoop supergroup         21 2024-01-09 10:06 /bda246/f2.txt
+xiv) hdfs dfs -rm /bda246/Week1/f4.txt
+	Deleted /bda246/Week1/f4.txt
+xv) hdfs dfs -chmod u+rx /bda246/Week1/f1.txt
+xvi) hdfs dfs -chown newowner:newgroup /bda246/Week1/f1.txt
+xvii) hdfs dfs -checksum /bda246/Week1/f1.txt
+	/bda246/Week1/f1.txt	MD5-of-0MD5-of-512CRC32C	00000200000000000000000088447ac6beb05f4e51a1336869fa326b
+xviii) hdfs dfs -concat /bda246/Week1/f1.txt /bda246/Week1/f1.txt /bda246/Week1/f3.txt
+xix) 
+xx)
+xxi) 
